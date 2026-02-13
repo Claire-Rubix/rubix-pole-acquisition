@@ -29,20 +29,20 @@ const HD="'Trebuchet MS','Lucida Grande',sans-serif";
 const STEPS_AM=[
   {id:"veille",time:"8h30",to:"9h30",title:"Reprise de la veille",desc:"Reprends les leads non contactés et les devis en attente d'hier.",color:"#60A5FA",emoji:"🚦",
     actions:["Relancer les leads sans réponse","Suivre les devis en cours","Vérifier les tickets Zendesk ouverts"],
-    tools:[{l:"Zendesk",u:"https://rubix.zendesk.com"}]},
+    tools:[{l:"Qlik",u:"https://qlik-digital.rubix.fr/form/hub/stream/3623bf48-511f-4f2a-bb6c-e937cacc4eaa"},{l:"Zendesk",u:"https://www.zendesk.fr/lp/brand/?utm_source=google&utm_medium=Search-Paid&utm_network=g&utm_campaign=SE_AW_EM_FR_FR_N_Sup_Brand_TM_Alpha_D_H&matchtype=e&utm_term=zendesk&utm_content=507210487661&theme=Zendesk&gad_source=1&gad_campaignid=12563927251&gbraid=0AAAAADn4z6hPeI89KDaayL92XNX2bJ0Kv&gclid=CjwKCAiAtLvMBhB_EiwA1u6_PtKknwzj9Awk0O8VpdCsMDSNdwPasfV51LLnKnqDlT0SLmL4Ag5g8xoCFu0QAvD_BwE"}]},
   {id:"leads",time:"9h30",to:"12h00",title:"Traitement des leads",desc:"Vérifier MR 03 dans Qliksense, puis traiter dans Rubix Go (lien depuis Qlik).",color:"#FBBF24",emoji:"🏎️",
     tip:"13% des 66FFF = comptes Gesfi existants. Vérifier Qliksense MR 03 avant création.",
     actions:["Vérifier clients MR 03 dans Qliksense","Traiter les nouveaux leads (via Rubix Go depuis Qlik)","Transférer les clients connus vers agences","Appels nouveaux clients + création 66FFF","Gérer les redirections si erreur"],
-    tools:[{l:"Qliksense MR03",u:"https://qliksense.rubix.com"}]},
+    tools:[{l:"Qlik",u:"https://qlik-digital.rubix.fr/form/hub/stream/3623bf48-511f-4f2a-bb6c-e937cacc4eaa"}]},
 ];
 const STEPS_PM=[
   {id:"paniers",time:"13h30",to:"14h30",title:"Relance paniers abandonnés",desc:"Clients connus vers agence/ATE. 66FFF optin vérifié vers relance.",color:"#FB923C",emoji:"🛞",
     tip:"RGPD : vérifier l'optin avant tout appel commercial 66FFF.",
     actions:["Clients connus (non 66FFF) vers agences/ATE","66FFF optin vérifié vers relance appel"],
-    tools:[{l:"Rubix Go",u:"https://go.rubix.com"}]},
+    tools:[{l:"Qlik",u:"https://qlik-digital.rubix.fr/form/hub/stream/3623bf48-511f-4f2a-bb6c-e937cacc4eaa"}]},
   {id:"devis",time:"14h30",to:"17h00",title:"Réponse aux devis",desc:"Demandes fournisseurs, rédaction devis, contrôle commandes.",color:"#34D399",emoji:"🏁",
     actions:["Demandes aux fournisseurs","Rédaction des devis","Contrôle commandes 66FFF (AT/AV)"],
-    tools:[{l:"Rubix Go",u:"https://go.rubix.com"}]},
+    tools:[{l:"Zendesk",u:"https://www.zendesk.fr/lp/brand/?utm_source=google&utm_medium=Search-Paid&utm_network=g&utm_campaign=SE_AW_EM_FR_FR_N_Sup_Brand_TM_Alpha_D_H&matchtype=e&utm_term=zendesk&utm_content=507210487661&theme=Zendesk&gad_source=1&gad_campaignid=12563927251&gbraid=0AAAAADn4z6hPeI89KDaayL92XNX2bJ0Kv&gclid=CjwKCAiAtLvMBhB_EiwA1u6_PtKknwzj9Awk0O8VpdCsMDSNdwPasfV51LLnKnqDlT0SLmL4Ag5g8xoCFu0QAvD_BwE"}]},
 ];
 const ALL_STEPS=[...STEPS_AM,...STEPS_PM];
 const ABS=[{id:"none",l:"Disponible",e:"",c:"#00D26A"},{id:"formation",l:"Formation",e:"🎓",c:"#A855F7"},{id:"reunion",l:"Réunion",e:"🤝",c:"#60A5FA"},{id:"deplacement",l:"Déplacement",e:"🚗",c:"#F59E0B"},{id:"off",l:"Off",e:"🏖️",c:"#94A3B8"}];
@@ -56,6 +56,20 @@ function mDFn(y,m){var d=[];var fd=new Date(y,m,1).getDay();var fdM=fd===0?7:fd;
 var STORE="rubix-acq-v18";
 function ld(){try{var r=localStorage.getItem(STORE);return r?JSON.parse(r):null;}catch(e){return null;}}
 function sv(d){try{localStorage.setItem(STORE,JSON.stringify(d));}catch(e){}}
+
+var _cloudSaveTimer=null;
+function cloudLoad(){
+  return fetch("/api/load").then(function(r){return r.json();})
+    .then(function(d){return d.data||null;})
+    .catch(function(){return null;});
+}
+function cloudSave(d){
+  clearTimeout(_cloudSaveTimer);
+  _cloudSaveTimer=setTimeout(function(){
+    fetch("/api/save",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)}).catch(function(){});
+  },2000);
+}
+
 function initState(){return{days:{},streak:0,lastActive:null};}
 function emptyDay(){return{am:"none",pm:"none",steps:{},topo:"",questions:"",satisfaction:0,saved:false,entries:[]};}
 function getAS(dd){if((dd.am||"none")!=="none"&&(dd.pm||"none")!=="none")return[];return ALL_STEPS;}
@@ -243,8 +257,23 @@ function App(){
   const [search,setSearch]=useState("");
   const [searchOpen,setSearchOpen]=useState(false);
   const tR=useRef();const prevPctRef=useRef(0);const [showConfetti,setShowConfetti]=useState(false);
-  useEffect(function(){setState(ld()||initState());},[]);
-  useEffect(function(){if(state)sv(state);},[state]);
+  useEffect(function(){
+    var local=ld()||initState();
+    setState(local);
+    cloudLoad().then(function(cloud){
+      if(cloud&&cloud._lastModified&&(!local._lastModified||cloud._lastModified>local._lastModified)){
+        setState(cloud);
+        sv(cloud);
+      }
+    });
+  },[]);
+  useEffect(function(){
+    if(state){
+      var d=Object.assign({},state,{_lastModified:Date.now()});
+      sv(d);
+      cloudSave(d);
+    }
+  },[state]);
   useEffect(function(){
     try{document.title="Pôle Acquisition · Rubix";}catch(e){}
     try{var link=document.querySelector("link[rel='icon']");if(!link){link=document.createElement("link");link.rel="icon";document.head.appendChild(link);}
