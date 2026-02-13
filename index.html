@@ -461,7 +461,7 @@ function App(){
             </div>
             <div style={{background:"#fff",borderRadius:14,padding:18,marginTop:14,border:"1.5px solid #E2E8F0"}}><div style={{fontSize:14,fontWeight:700,color:"#051E50",marginBottom:10}}>Satisfaction</div><div style={{display:"flex",gap:8}}>{[{n:1,e:"😓",l:"Difficile"},{n:2,e:"😐",l:"Moyen"},{n:3,e:"🙂",l:"Correct"},{n:4,e:"😊",l:"Bien"},{n:5,e:"🔥",l:"Top !"}].map(function(item){return(<button key={item.n} onClick={function(){setDD(function(d2){return{...d2,satisfaction:d2.satisfaction===item.n?0:item.n};});}} style={{flex:1,padding:"10px 4px",borderRadius:12,border:"2px solid "+(dd.satisfaction===item.n?"#FFD700":"#E2E8F0"),background:dd.satisfaction===item.n?"linear-gradient(135deg,#FFFBEB,#FEF3C7)":"#fff",cursor:"pointer",textAlign:"center"}}><div style={{fontSize:24}}>{item.e}</div><div style={{fontSize:9,fontWeight:700,color:dd.satisfaction===item.n?"#051E50":"#94A3B8",marginTop:3}}>{item.l}</div></button>);})}</div></div>
             <div style={{display:"flex",gap:10,marginTop:18}}><button onClick={generateEmail} style={{flex:1,padding:"14px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#051E50,#0A2D6E)",color:"#FFD700",fontSize:14,fontWeight:800,cursor:"pointer"}}>✉️ Envoyer le topo à Denis</button></div>
-            </>}</>;})()}
+            </>}</>);})()}
           </div>)}
 
           {/* REPORTING */}
@@ -591,7 +591,7 @@ function App(){
                   </div>
                 </div>
                 <div style={{background:"#fff",borderRadius:16,padding:18,border:"1.5px solid #E2E8F0",gridColumn:"1 / -1"}}>
-                  <div style={{fontSize:14,fontWeight:800,color:"#051E50",marginBottom:14}}>Récompenses</div>
+                  <div style={{fontSize:14,fontWeight:800,color:"#051E50",marginBottom:14}}>Jalons</div>
                   <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
                     {badges.map(function(b){var unlocked=b.streak?(streak>=b.need):(perfectDays>=b.need);var progress=b.streak?Math.min(streak,b.need):Math.min(perfectDays,b.need);return(
                       <div key={b.id} style={{textAlign:"center",padding:"14px 8px",borderRadius:14,border:"1.5px solid "+(unlocked?"#FFD700":"#F1F5F9"),background:unlocked?"linear-gradient(135deg,#FFD70010,#FFD70020)":"#FAFBFF",opacity:unlocked?1:.5}}>
