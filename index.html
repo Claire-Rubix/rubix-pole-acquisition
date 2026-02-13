@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pôle Acquisition - Rubix</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Trebuchet MS', system-ui, sans-serif; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    @keyframes slideT { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+    @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes confettiPiece { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+  </style>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const LOGO="data:image/jpeg;base64,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";
+const FT="'Trebuchet MS','Lucida Grande',sans-serif";
+const MN="'JetBrains Mono','Consolas',monospace";
+const HD="'Trebuchet MS','Lucida Grande',sans-serif";
+
+const STEPS_AM=[
+  {id:"veille",time:"8h30",to:"9h30",title:"Reprise de la veille",desc:"Reprends les leads non contactés et les devis en attente d'hier.",color:"#60A5FA",emoji:"🚦",
+    actions:["Relancer les leads sans réponse","Suivre les devis en cours","Vérifier les tickets Zendesk ouverts"],
+    tools:[{l:"Zendesk",u:"https://rubix.zendesk.com"}]},
+  {id:"leads",time:"9h30",to:"12h00",title:"Traitement des leads",desc:"Vérifier MR 03 dans Qliksense, puis traiter dans Rubix Go (lien depuis Qlik).",color:"#FBBF24",emoji:"🏎️",
+    tip:"13% des 66FFF = comptes Gesfi existants. Vérifier Qliksense MR 03 avant création.",
+    actions:["Vérifier clients MR 03 dans Qliksense","Traiter les nouveaux leads (via Rubix Go depuis Qlik)","Transférer les clients connus vers agences","Appels nouveaux clients + création 66FFF","Gérer les redirections si erreur"],
+    tools:[{l:"Qliksense MR03",u:"https://qliksense.rubix.com"}]},
+];
+const STEPS_PM=[
+  {id:"paniers",time:"13h30",to:"14h30",title:"Relance paniers abandonnés",desc:"Clients connus vers agence/ATE. 66FFF optin vérifié vers relance.",color:"#FB923C",emoji:"🛞",
+    tip:"RGPD : vérifier l'optin avant tout appel commercial 66FFF.",
+    actions:["Clients connus (non 66FFF) vers agences/ATE","66FFF optin vérifié vers relance appel"],
+    tools:[{l:"Rubix Go",u:"https://go.rubix.com"}]},
+  {id:"devis",time:"14h30",to:"17h00",title:"Réponse aux devis",desc:"Demandes fournisseurs, rédaction devis, contrôle commandes.",color:"#34D399",emoji:"🏁",
+    actions:["Demandes aux fournisseurs","Rédaction des devis","Contrôle commandes 66FFF (AT/AV)"],
+    tools:[{l:"Rubix Go",u:"https://go.rubix.com"}]},
+];
+const ALL_STEPS=[...STEPS_AM,...STEPS_PM];
+const ABS=[{id:"none",l:"Disponible",e:"",c:"#00D26A"},{id:"formation",l:"Formation",e:"🎓",c:"#A855F7"},{id:"reunion",l:"Réunion",e:"🤝",c:"#60A5FA"},{id:"deplacement",l:"Déplacement",e:"🚗",c:"#F59E0B"},{id:"off",l:"Off",e:"🏖️",c:"#94A3B8"}];
+const CANAUX=["Email","Chat","Téléphone"];
+
+function todayStr(){return new Date().toISOString().split("T")[0];}
+function fmtD(d){try{return new Date(d+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});}catch(e){return d;}}
+function wk(d){var dt=new Date(d+"T12:00:00"),j=new Date(dt.getFullYear(),0,1);return Math.ceil(((dt-j)/864e5+j.getDay()+1)/7);}
+function mDFn(y,m){var d=[];var fd=new Date(y,m,1).getDay();var fdM=fd===0?7:fd;if(fdM<=5){for(var i=1;i<fdM;i++)d.push(null);}var l=new Date(y,m+1,0).getDate();for(var i2=1;i2<=l;i2++){var dow=new Date(y,m,i2).getDay();if(dow!==0&&dow!==6)d.push(y+"-"+String(m+1).padStart(2,"0")+"-"+String(i2).padStart(2,"0"));}return d;}
+
+var STORE="rubix-acq-v18";
+function ld(){try{var r=localStorage.getItem(STORE);return r?JSON.parse(r):null;}catch(e){return null;}}
+function sv(d){try{localStorage.setItem(STORE,JSON.stringify(d));}catch(e){}}
+function initState(){return{days:{},streak:0,lastActive:null};}
+function emptyDay(){return{am:"none",pm:"none",steps:{},topo:"",questions:"",satisfaction:0,saved:false,entries:[]};}
+function getAS(dd){if((dd.am||"none")!=="none"&&(dd.pm||"none")!=="none")return[];return ALL_STEPS;}
+function buildAT(dd){var p=[];ALL_STEPS.forEach(function(st){var sd=(dd.steps||{})[st.id];if(sd&&sd.comment&&sd.comment.trim())p.push("• "+st.title+" : "+sd.comment.trim());});return p.join("\n");}
+
+function esc(v){return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function exportXLS(entries,filename){
+  var cols=["Semaine","Date","N\u00b0 client Gesfi","Client acquisition","Canal de communication","Type de demande","Client existant avec Siret","Client avec CA 12 mois glissants","Client avec Rapport RubixGo","Cr\u00e9ation compte Gesfi d\u00e9di\u00e9","Dde transf\u00e9r\u00e9e Agence","Inscription Rubix Club","CA command\u00e9","Valeur Devis","mail leads","Actions David","Relance Devis","Ouverture/Activation acc\u00e8s","Commentaires"];
+  var h='<?xml version="1.0" encoding="UTF-8"?>\n<?mso-application progid="Excel.Sheet"?>\n';
+  h+='<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n';
+  h+='<Styles>\n<Style ss:ID="hdr"><Font ss:Bold="1" ss:Color="#FFD700" ss:FontName="Calibri" ss:Size="11"/><Interior ss:Color="#051E50" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/></Style>\n';
+  h+='<Style ss:ID="def"><Font ss:FontName="Calibri" ss:Size="11"/><Alignment ss:Vertical="Center"/></Style>\n';
+  h+='<Style ss:ID="oui"><Font ss:FontName="Calibri" ss:Size="11" ss:Color="#00C66A" ss:Bold="1"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>\n';
+  h+='</Styles>\n';
+  h+='<Worksheet ss:Name="Reporting">\n<Table ss:DefaultColumnWidth="80">\n';
+  h+='<Row ss:StyleID="hdr" ss:Height="32">';cols.forEach(function(c){h+='<Cell><Data ss:Type="String">'+esc(c)+'</Data></Cell>';});h+='</Row>\n';
+  entries.forEach(function(e){
+    h+='<Row ss:StyleID="def">';
+    var vals=[
+      {v:e.week||"",b:false},{v:e.date||"",b:false},{v:e.gesfi||"",b:false},{v:e.client||"",b:false},
+      {v:e.canal||"",b:false},{v:e.typeDemande||"",b:false},
+      {v:e.existantSiret,b:true},{v:e.ca12mois,b:true},{v:e.rapportRGo,b:true},{v:e.creationGesfi,b:true},
+      {v:e.agence||"",b:false},{v:e.rubixClub,b:true},
+      {v:e.caCommande||"",b:false},{v:e.valeurDevis||"",b:false},{v:e.mailLeads||"",b:false},{v:e.actionsDavid||"",b:false},
+      {v:e.relanceDevis,b:true},{v:e.ouvertureAcces,b:true},{v:e.commentaires||"",b:false}
+    ];
+    vals.forEach(function(item){
+      if(item.b){h+='<Cell'+(item.v?' ss:StyleID="oui"':'')+'><Data ss:Type="String">'+(item.v?"Oui":"")+'</Data></Cell>';}
+      else{h+='<Cell><Data ss:Type="String">'+esc(item.v)+'</Data></Cell>';}
+    });
+    h+='</Row>\n';
+  });
+  h+='</Table>\n<x:AutoFilter x:Range="R1C1:R'+(entries.length+1)+'C'+cols.length+'"/>\n';
+  h+='<WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>1</SplitHorizontal><TopRowBottomPane>1</TopRowBottomPane></WorksheetOptions>\n';
+  h+='</Worksheet>\n</Workbook>';
+  try{var blob=new Blob([h],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);}catch(e){}
+}
+
+// ── Confetti (React-based) ──
+function ConfettiOverlay({active}){
+  if(!active)return null;
+  var colors=["#FFD700","#051E50","#00D26A","#FF6B6B","#A855F7","#60A5FA","#FB923C"];
+  var pieces=[];for(var i=0;i<80;i++){pieces.push({id:i,x:Math.random()*100,sz:Math.random()*8+4,h:Math.random()>.5?1:2.8,col:colors[i%colors.length],rd:Math.random()>.5?"50%":"2px",dur:Math.random()*2+1.5,del:Math.random()*.8});}
+  return(<div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:9999,overflow:"hidden"}}>{pieces.map(function(p){return <div key={p.id} style={{position:"absolute",top:-20,left:p.x+"%",width:p.sz,height:p.sz*p.h,background:p.col,borderRadius:p.rd,animation:"confFall "+p.dur+"s ease-in "+p.del+"s forwards"}}/>;})}</div>);
+}
+// ── F1 Victory Sound ──
+function playVictory(){
+  try{var ctx=new(window.AudioContext||window.webkitAudioContext)();function n(f,s,d,g){var o=ctx.createOscillator();var v=ctx.createGain();o.connect(v);v.connect(ctx.destination);o.type="square";o.frequency.value=f;v.gain.setValueAtTime(g,ctx.currentTime+s);v.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+s+d);o.start(ctx.currentTime+s);o.stop(ctx.currentTime+s+d);}n(523,0,.15,.1);n(659,.12,.15,.1);n(784,.24,.15,.1);n(1047,.36,.45,.13);n(784,.55,.1,.07);n(1047,.65,.55,.1);}catch(e){}
+}
+// ── Motivational Messages ──
+function getProMsg(pct,h,step,checkedAct,totalAct,isOff){
+  if(pct===100)return"Objectif atteint. Toutes les actions du jour sont bouclées.";
+  if(isOff)return"Journée off. Bon repos, la reprise n'en sera que meilleure.";
+  if(step){var stepMsgs={
+    veille:["Reprise des dossiers en attente, priorisez les leads chauds.","Les relances du matin sont les plus efficaces, c'est le bon moment.","Commencez par les tickets ouverts, le reste suivra naturellement."],
+    leads:["Phase de traitement : chaque lead qualifié est une opportunité de CA.","Concentration maximale sur les MR 03, c'est là que se fait la différence.","Le volume se construit maintenant, lead après lead.","Qualifiez, transférez, créez. Le pipeline se remplit."],
+    paniers:["Les paniers abandonnés sont du CA à portée de main.","Un appel bien placé peut transformer un panier en commande.","Vérifiez l'optin, puis décrochez. Chaque relance compte."],
+    devis:["Les devis envoyés rapidement ont un meilleur taux de conversion.","Précision et réactivité sur les devis, c'est ce qui fidélise.","Chaque devis est une promesse de valeur pour le client."]
+  };if(stepMsgs[step]){var sm=stepMsgs[step];return sm[Math.floor(h+totalAct)%sm.length];}}
+  if(pct>=80){var msgs=["Plus que quelques actions pour boucler la journée.","Vous y êtes presque, ne lâchez rien.","Dernière ligne droite, l'objectif est en vue."];return msgs[Math.floor(h+checkedAct)%msgs.length];}
+  if(pct>=50){var msgs2=["Bonne progression, la moitié du chemin est faite.","Rythme solide, continuez comme ça.","Cap dépassé, maintenez l'effort."];return msgs2[Math.floor(h+checkedAct)%msgs2.length];}
+  var morning=["Début de journée, posez les bases d'une session productive.","Les premières heures donnent le ton, capitalisez dessus.","Matinée lancée, gardez le rythme.","Bonne dynamique matinale, continuez sur cette trajectoire."];
+  var midday=["Pause méritée, vous reprendrez avec plus de clarté.","Mi-journée passée, le plus dur est fait."];
+  var afternoon=["L'après-midi est le moment idéal pour closer les dossiers ouverts.","Restez focus sur les priorités, la fin de journée approche.","Dernier tiers de la journée, finissez fort.","Sprint final, chaque action complétée est un pas de plus."];
+  var evening=["Pensez à finaliser votre topo avant de quitter.","Bonne fin de journée, sécurisez vos avancées.","Il est temps de consolider et préparer demain."];
+  var pool=h>=18?evening:h>=14?afternoon:h>=12?midday:morning;return pool[Math.floor(h+checkedAct)%pool.length];
+}
+
+// ── Shared UI ──
+function Inp({value,onChange,placeholder,disabled}){return <input style={{background:disabled?"#F1F5F9":"#fff",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"9px 14px",color:"#0F172A",fontSize:13,fontFamily:FT,boxSizing:"border-box",width:"100%",opacity:disabled?.5:1,transition:"border .2s"}} value={value} onChange={function(e){if(!disabled)onChange(e.target.value);}} placeholder={placeholder} readOnly={disabled}/>;}
+function TA2({value,onChange,placeholder,rows,disabled}){return <textarea style={{width:"100%",background:disabled?"#F1F5F9":"#fff",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",color:"#0F172A",fontSize:13,resize:"vertical",fontFamily:FT,boxSizing:"border-box",minHeight:50,lineHeight:1.6,opacity:disabled?.5:1}} value={value} onChange={function(e){if(!disabled)onChange(e.target.value);}} placeholder={placeholder} rows={rows||2} readOnly={disabled}/>;}
+function Lbl({children}){return <div style={{fontSize:11,fontWeight:700,color:"#64748B",marginBottom:4,textTransform:"uppercase",letterSpacing:.5}}>{children}</div>;}
+function Chk({label,checked,onChange}){return <button onClick={function(){onChange(!checked);}} style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:8,border:"1.5px solid "+(checked?"#00D26A":"#E2E8F0"),background:checked?"#00D26A0F":"#fff",cursor:"pointer",fontSize:13,fontWeight:checked?700:500,color:checked?"#059669":"#64748B",transition:"all .15s",whiteSpace:"nowrap"}}>{checked&&<span style={{fontSize:13}}>✓</span>}{label}</button>;}
+
+
+// ── Reporting ──
+function emptyEntry(){return{gesfi:"",client:"",canal:"Email",typeDemande:"",existantSiret:false,ca12mois:false,rapportRGo:false,creationGesfi:false,agence:"",rubixClub:false,caCommande:"",valeurDevis:"",mailLeads:"",actionsDavid:"",relanceDevis:false,ouvertureAcces:false,commentaires:"",relanceDate:""};}
+function hasData(e){return e.gesfi.trim()||e.client.trim()||e.typeDemande.trim()||e.agence.trim()||e.mailLeads.trim()||e.caCommande.trim()||e.valeurDevis.trim()||e.actionsDavid.trim()||e.commentaires.trim()||e.existantSiret||e.ca12mois||e.rapportRGo||e.creationGesfi||e.rubixClub||e.relanceDevis||e.ouvertureAcces;}
+function nextWorkday(d){var dt=new Date(d+"T12:00:00");dt.setDate(dt.getDate()+1);while(dt.getDay()===0||dt.getDay()===6)dt.setDate(dt.getDate()+1);return dt.toISOString().split("T")[0];}
+function prevWorkday(d){var dt=new Date(d+"T12:00:00");dt.setDate(dt.getDate()-1);while(dt.getDay()===0||dt.getDay()===6)dt.setDate(dt.getDate()-1);return dt.toISOString().split("T")[0];}
+function isWeekend(d){var dt=new Date(d+"T12:00:00");return dt.getDay()===0||dt.getDay()===6;}
+
+function ReportingForm({day,onAdd}){
+  const [e,setE]=useState(emptyEntry());
+  function upd(k,v){setE(function(p){var n={...p};n[k]=v;return n;});}
+  function submit(){if(!hasData(e))return;onAdd({...e,date:day,week:"S"+wk(day),id:Date.now()});setE(emptyEntry());}
+  return(
+    <div style={{background:"#fff",borderRadius:16,padding:20,border:"1.5px solid #E2E8F0",boxShadow:"0 1px 3px rgba(5,30,80,.04)"}}>
+      <div style={{fontSize:15,fontWeight:800,color:"#051E50",marginBottom:16,fontFamily:HD}}>Nouvelle entrée</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+        <div><Lbl>N° Gesfi</Lbl><Inp value={e.gesfi} onChange={function(v){upd("gesfi",v);}} placeholder="123456"/></div>
+        <div><Lbl>Client</Lbl><Inp value={e.client} onChange={function(v){upd("client",v);}} placeholder="Nom client"/></div>
+        <div><Lbl>Canal</Lbl><div style={{display:"flex",gap:3}}>{CANAUX.map(function(c){return <button key={c} onClick={function(){upd("canal",c);}} style={{flex:1,padding:"8px 2px",borderRadius:8,border:"1.5px solid "+(e.canal===c?"#60A5FA":"#E2E8F0"),background:e.canal===c?"#EFF6FF":"#fff",fontSize:10,fontWeight:700,cursor:"pointer",color:e.canal===c?"#1E40AF":"#94A3B8",transition:"all .15s"}}>{c==="Téléphone"?"📞":c==="Email"?"✉️":"💬"}</button>;})}</div></div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginTop:10}}>
+        <div><Lbl>Type demande</Lbl><Inp value={e.typeDemande} onChange={function(v){upd("typeDemande",v);}} placeholder="Devis, info..."/></div>
+        <div><Lbl>Agence transf.</Lbl><Inp value={e.agence} onChange={function(v){upd("agence",v);}} placeholder="Lyon, Nantes..."/></div>
+        <div><Lbl>Mail leads</Lbl><Inp value={e.mailLeads} onChange={function(v){upd("mailLeads",v);}} placeholder="email@..."/></div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginTop:10}}>
+        <div><Lbl>CA commandé</Lbl><Inp value={e.caCommande} onChange={function(v){upd("caCommande",v);}} placeholder="€"/></div>
+        <div><Lbl>Valeur Devis</Lbl><Inp value={e.valeurDevis} onChange={function(v){upd("valeurDevis",v);}} placeholder="€"/></div>
+        <div><Lbl>Actions David</Lbl><Inp value={e.actionsDavid} onChange={function(v){upd("actionsDavid",v);}} placeholder="Actions..."/></div>
+      </div>
+      <div style={{marginTop:10}}><Lbl>Commentaires</Lbl><Inp value={e.commentaires} onChange={function(v){upd("commentaires",v);}} placeholder="Notes libres..."/></div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:12}}>
+        <Chk label="Client existant Siret" checked={e.existantSiret} onChange={function(v){upd("existantSiret",v);}}/> 
+        <Chk label="CA 12 mois" checked={e.ca12mois} onChange={function(v){upd("ca12mois",v);}}/> 
+        <Chk label="Rapport RubixGo" checked={e.rapportRGo} onChange={function(v){upd("rapportRGo",v);}}/> 
+        <Chk label="Création Gesfi" checked={e.creationGesfi} onChange={function(v){upd("creationGesfi",v);}}/> 
+        <Chk label="Rubix Club" checked={e.rubixClub} onChange={function(v){upd("rubixClub",v);}}/> 
+        <Chk label="Relance Devis" checked={e.relanceDevis} onChange={function(v){upd("relanceDevis",v);}}/> 
+        <Chk label="Ouverture accès" checked={e.ouvertureAcces} onChange={function(v){upd("ouvertureAcces",v);}}/> 
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginTop:12}}>
+        <button onClick={function(){if(!e.relanceDate)upd("relanceDate",nextWorkday(day));else upd("relanceDate","");}} style={{padding:"8px 16px",borderRadius:10,border:"1.5px solid "+(e.relanceDate?"#FFD700":"#E2E8F0"),background:e.relanceDate?"#FFD70012":"#fff",fontSize:12,fontWeight:700,cursor:"pointer",color:e.relanceDate?"#051E50":"#94A3B8",transition:"all .15s"}}>{"🔔 À relancer"}</button>
+        {e.relanceDate&&<input type="date" value={e.relanceDate} min={nextWorkday(day)} onChange={function(ev){upd("relanceDate",ev.target.value);}} style={{padding:"7px 12px",borderRadius:10,border:"1.5px solid #FFD700",fontSize:12,fontFamily:MN,color:"#051E50"}}/>}
+        {e.relanceDate&&<span style={{fontSize:11,color:"#94A3B8"}}>{"Apparaitra le "+fmtD(e.relanceDate)}</span>}
+      </div>
+      <button onClick={submit} style={{marginTop:14,padding:"11px 32px",borderRadius:10,border:"none",background:hasData(e)?"linear-gradient(135deg,#00D26A,#059669)":"#E2E8F0",color:hasData(e)?"#fff":"#94A3B8",fontSize:13,fontWeight:800,cursor:hasData(e)?"pointer":"default",boxShadow:hasData(e)?"0 4px 16px rgba(0,210,106,.2)":"none",transition:"all .2s"}}>Ajouter</button>
+    </div>);
+}
+
+function ReportingTable({entries,onDelete,onReorder}){
+  var dragIdx=useRef(null);
+  if(!entries||!entries.length)return <div style={{textAlign:"center",padding:"32px",color:"#94A3B8",fontSize:13}}>Aucune entrée ce jour</div>;
+  var cols=[{k:"gesfi",l:"Gesfi",w:70},{k:"client",l:"Client",w:100},{k:"canal",l:"Canal",w:60},{k:"typeDemande",l:"Demande",w:80},{k:"existantSiret",l:"Siret",w:40,b:1},{k:"ca12mois",l:"CA12m",w:40,b:1},{k:"rapportRGo",l:"RGo",w:35,b:1},{k:"creationGesfi",l:"Créa.",w:35,b:1},{k:"agence",l:"Agence",w:70},{k:"rubixClub",l:"Club",w:35,b:1},{k:"caCommande",l:"CA cmd",w:60},{k:"valeurDevis",l:"Devis€",w:60},{k:"mailLeads",l:"Mail",w:80},{k:"actionsDavid",l:"Actions",w:80},{k:"relanceDevis",l:"Rel.",w:30,b:1},{k:"ouvertureAcces",l:"Acc.",w:30,b:1},{k:"commentaires",l:"Com.",w:80}];
+  return(<div style={{overflowX:"auto",borderRadius:12,border:"1.5px solid #E2E8F0"}}>
+    <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,fontFamily:FT}}>
+      <thead><tr><th style={{padding:"10px 4px",background:"#051E50",width:24}}/>{cols.map(function(c,i){return <th key={i} style={{padding:"10px 6px",background:"#051E50",color:"#FFD700",fontWeight:700,fontSize:10,textAlign:c.b?"center":"left",whiteSpace:"nowrap",letterSpacing:.3}}>{c.l}</th>;})}<th style={{padding:"10px 6px",background:"#051E50",width:30}}/></tr></thead>
+      <tbody>{entries.map(function(e,idx){return(<tr key={e.id||idx} draggable onDragStart={function(){dragIdx.current=idx;}} onDragOver={function(ev){ev.preventDefault();}} onDrop={function(){if(dragIdx.current!==null&&dragIdx.current!==idx){onReorder(dragIdx.current,idx);dragIdx.current=null;}}} style={{background:idx%2?"#F8FAFF":"#fff",cursor:"grab"}}><td style={{padding:"6px 4px",borderBottom:"1px solid #EDF2F7",color:"#CBD5E1",fontSize:10,textAlign:"center",userSelect:"none"}}>{"⠿"}</td>{cols.map(function(c,ci){return <td key={ci} style={{padding:"8px 6px",borderBottom:"1px solid #EDF2F7",textAlign:c.b?"center":"left",maxWidth:c.w,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontSize:12,fontFamily:c.k==="gesfi"||c.k==="caCommande"||c.k==="valeurDevis"?MN:FT,color:c.k==="gesfi"?"#051E50":"#475569",fontWeight:c.k==="gesfi"?700:400}}>{c.b?(e[c.k]?<span style={{color:"#00D26A",fontWeight:700}}>{"✓"}</span>:""):(c.k==="canal"?<span style={{padding:"2px 6px",borderRadius:4,fontSize:10,fontWeight:700,background:e.canal==="Email"?"#DBEAFE":e.canal==="Chat"?"#D1FAE5":"#FEF3C7",color:e.canal==="Email"?"#1E40AF":e.canal==="Chat"?"#065F46":"#92400E"}}>{String(e.canal||"")}</span>:String(e[c.k]||""))}</td>;})}<td style={{padding:"8px 6px",borderBottom:"1px solid #EDF2F7"}}><button onClick={function(){onDelete(e.id);}} style={{background:"none",border:"none",cursor:"pointer",color:"#CBD5E1",fontSize:16,lineHeight:1}}>{"×"}</button></td></tr>);})}</tbody>
+    </table></div>);
+}
+
+function StepCard({step,sd,onToggle,onComment}){
+  const [open,setOpen]=useState(false);
+  var checked=step.actions.filter(function(_,i){return sd.checks&&sd.checks[i];}).length;
+  var total=step.actions.length;var pct=Math.round((checked/total)*100);var isDone=pct===100;
+  return(
+    <div style={{background:"#fff",borderRadius:14,overflow:"hidden",border:"1.5px solid "+(open?step.color+"44":"#E2E8F0"),boxShadow:open?"0 8px 32px "+step.color+"10":"0 1px 3px rgba(0,0,0,.03)",transition:"all .25s"}}>
+      <div onClick={function(){setOpen(!open);}} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 18px",cursor:"pointer",background:open?"linear-gradient(135deg,"+step.color+"06,transparent)":"transparent"}}>
+        <div style={{display:"flex",alignItems:"center",gap:14}}>
+          <div style={{width:40,height:40,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,background:isDone?"linear-gradient(135deg,#00D26A,#059669)":open?"linear-gradient(135deg,"+step.color+","+step.color+"BB)":"#F1F5F9",color:isDone||open?"#fff":"#94A3B8",transition:"all .3s",boxShadow:isDone||open?"0 4px 14px "+(isDone?"#00D26A33":step.color+"33"):"none"}}>{isDone?"✓":step.emoji}</div>
+          <div><div style={{fontSize:11,fontFamily:MN,color:step.color,fontWeight:600}}>{step.time+" → "+step.to}</div><div style={{fontSize:15,fontWeight:700,color:"#0F172A",marginTop:2}}>{step.title}</div></div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{position:"relative",width:38,height:38}}><svg width="38" height="38" style={{position:"absolute",transform:"rotate(-90deg)"}}><circle cx="19" cy="19" r="13" fill="none" stroke="#F1F5F9" strokeWidth="3"/><circle cx="19" cy="19" r="13" fill="none" stroke={isDone?"#00D26A":step.color} strokeWidth="3" strokeDasharray="81.7" strokeDashoffset={81.7*(1-pct/100)} strokeLinecap="round" style={{transition:"stroke-dashoffset .5s"}}/></svg><span style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",fontSize:10,fontWeight:900,fontFamily:MN,color:isDone?"#00D26A":"#94A3B8"}}>{pct}</span></div>
+          <span style={{fontSize:16,color:"#CBD5E1",transform:open?"rotate(180deg)":"",transition:"transform .3s"}}>▾</span>
+        </div>
+      </div>
+      {open&&(<div style={{padding:"0 18px 18px",animation:"fadeUp .2s ease"}}>
+        <p style={{fontSize:13,color:"#475569",marginBottom:14,lineHeight:1.7}}>{step.desc}</p>
+        {step.tip&&<div style={{padding:"10px 16px",borderRadius:10,background:"#FFFBEB",border:"1px solid #FDE68A",fontSize:12,color:"#92400E",lineHeight:1.5,marginBottom:14}}>{"💡 "+step.tip}</div>}
+        {step.tools&&<div style={{display:"flex",gap:6,marginBottom:14}}>{step.tools.map(function(t,i){return <a key={i} href={t.u} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"9px 16px",borderRadius:10,background:"#051E50",color:"#FFD700",fontSize:12,fontWeight:700,textDecoration:"none",boxShadow:"0 2px 10px rgba(5,30,80,.15)"}}>{"↗ "+t.l}</a>;})}</div>}
+        <div style={{background:"#FAFBFF",borderRadius:12,padding:"4px 16px"}}>
+          {step.actions.map(function(action,i){var isC=!!(sd.checks&&sd.checks[i]);return(
+            <div key={i} onClick={function(ev){ev.stopPropagation();onToggle(i);}} style={{display:"flex",alignItems:"center",gap:14,padding:"12px 0",borderBottom:i<total-1?"1px solid #EDF2F7":"none",cursor:"pointer"}}>
+              <div style={{width:26,height:26,borderRadius:8,border:"2px solid "+(isC?"#00D26A":"#D1D5DB"),background:isC?"linear-gradient(135deg,#00D26A,#059669)":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s",boxShadow:isC?"0 2px 10px rgba(0,210,106,.25)":"none"}}>{isC&&<span style={{color:"#fff",fontSize:13,fontWeight:900}}>✓</span>}</div>
+              <span style={{fontSize:14,color:isC?"#CBD5E1":"#0F172A",textDecoration:isC?"line-through":"none",flex:1,lineHeight:1.5}}>{action}</span>
+            </div>);})}
+        </div>
+        <div style={{marginTop:14}}><Lbl>Commentaire (→ topo)</Lbl><TA2 value={sd.comment||""} onChange={onComment} placeholder="Notes, chiffres clés..." rows={2}/></div>
+      </div>)}
+    </div>);
+}
+
+function AbsPill({label,value,onChange,disabled}){
+  const [open,setOpen]=useState(false);var cur=ABS.find(function(r){return r.id===value;})||ABS[0];var isA=value!=="none";
+  return(<div style={{position:"relative"}}><Lbl>{label}</Lbl>
+    <button onClick={function(){if(!disabled)setOpen(!open);}} style={{display:"flex",alignItems:"center",gap:6,padding:"9px 14px",borderRadius:10,border:"1.5px solid "+(isA?cur.c+"55":"#E2E8F0"),background:isA?cur.c+"08":"#fff",cursor:disabled?"default":"pointer",fontSize:13,fontWeight:700,color:isA?cur.c:"#00D26A",width:"100%",opacity:disabled?.5:1}}>
+      {isA?<span>{cur.e}</span>:<span>✓</span>}<span style={{flex:1,textAlign:"left"}}>{cur.l}</span>{!disabled&&<span style={{color:"#CBD5E1"}}>▾</span>}
+    </button>
+    {open&&!disabled&&(<div style={{position:"absolute",top:"100%",left:0,right:0,marginTop:4,background:"#fff",borderRadius:12,border:"1px solid #E2E8F0",boxShadow:"0 16px 48px rgba(0,0,0,.12)",zIndex:30,padding:4}}>
+      {ABS.map(function(r){return(<button key={r.id} onClick={function(){onChange(r.id);setOpen(false);}} style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 14px",border:"none",borderRadius:8,background:value===r.id?"#FFD70012":"transparent",cursor:"pointer",fontSize:13,fontWeight:value===r.id?700:500,color:value===r.id?"#051E50":"#475569"}}>{r.e?<span>{r.e}</span>:<span style={{color:"#00D26A"}}>✓</span>}<span>{r.l}</span></button>);})}</div>)}
+  </div>);
+}
+
+// ═════ APP ═════
+function App(){
+  const [state,setState]=useState(null);
+  const [day,setDay]=useState(todayStr());
+  const [tab,setTab]=useState("home");
+  const [toast,setToast]=useState(null);
+  const [mo,setMo]=useState(0);
+  const [search,setSearch]=useState("");
+  const [searchOpen,setSearchOpen]=useState(false);
+  const tR=useRef();const prevPctRef=useRef(0);const [showConfetti,setShowConfetti]=useState(false);
+  useEffect(function(){setState(ld()||initState());},[]);
+  useEffect(function(){if(state)sv(state);},[state]);
+  useEffect(function(){
+    try{document.title="Pôle Acquisition · Rubix";}catch(e){}
+    try{var link=document.querySelector("link[rel='icon']");if(!link){link=document.createElement("link");link.rel="icon";document.head.appendChild(link);}
+    try{var cv=document.createElement("canvas");cv.width=64;cv.height=64;var ctx=cv.getContext("2d");ctx.fillStyle="#051E50";ctx.fillRect(0,0,64,64);ctx.fillStyle="#FFD700";ctx.font="bold 36px sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("R",32,34);link.href=cv.toDataURL("image/png");}catch(e){}}catch(e){}
+  },[]);
+  // Confetti trigger (must be before early return to preserve hooks order)
+  useEffect(function(){
+    if(!state)return;
+    var dd2=state.days[day]||emptyDay();var as=getAS(dd2);
+    var tA=as.reduce(function(s,st){return s+st.actions.length;},0);
+    var cA=as.reduce(function(s,st){var sd=(dd2.steps||{})[st.id];var ch=sd&&sd.checks?sd.checks:{};return s+st.actions.filter(function(_,i){return ch[i];}).length;},0);
+    var p=tA?Math.round((cA/tA)*100):0;
+    if(p===100&&prevPctRef.current<100&&tA>0){setShowConfetti(true);try{playVictory();}catch(e){}setTimeout(function(){setShowConfetti(false);},4500);}
+    prevPctRef.current=p;
+  },[state,day]);
+  function flash(m){setToast(m);clearTimeout(tR.current);tR.current=setTimeout(function(){setToast(null);},2200);}
+  if(!state)return <div style={{background:"#F0F2F8",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:FT}}><span style={{color:"#94A3B8"}}>Chargement...</span></div>;
+
+  var dd=state.days[day]||emptyDay();var activeSteps=getAS(dd);var isFullOff=activeSteps.length===0;
+  function setDD(fn){setState(function(p){var nd=fn(p.days[day]||emptyDay());return{...p,days:{...p.days,[day]:nd}};});}
+  function getStep(id){return(dd.steps||{})[id]||{done:false,comment:"",checks:{}};}
+  function setStep(id,u){setDD(function(d){var s2={...(d.steps||{})};s2[id]={...(s2[id]||{done:false,comment:"",checks:{}}),...u};return{...d,steps:s2};});}
+  function toggleCheck(id,i){var s=getStep(id);var ch={...(s.checks||{})};ch[i]=!ch[i];setStep(id,{checks:ch});}
+  function addEntry(e){setDD(function(d){return{...d,entries:[...(d.entries||[]),e]};});flash("Entrée ajoutée ✓");}
+  function deleteEntry(eid){setDD(function(d){return{...d,entries:(d.entries||[]).filter(function(e){return e.id!==eid;})};});}
+  function reorderEntries(fromIdx,toIdx){setDD(function(d){var arr=[...(d.entries||[])];var item=arr.splice(fromIdx,1)[0];arr.splice(toIdx,0,item);return{...d,entries:arr};});}
+
+  var totalAct=activeSteps.reduce(function(s,st){return s+st.actions.length;},0);
+  var checkedAct=activeSteps.reduce(function(s,st){return s+st.actions.filter(function(_,i){return(getStep(st.id).checks||{})[i];}).length;},0);
+  var pct=totalAct?Math.round((checkedAct/totalAct)*100):0;
+  var h2=new Date().getHours();var greet=h2<12?"Bonjour David":h2<14?"Bon appétit David":h2<18?"Bon après-midi David":"Bonne soirée David";
+
+  var autoTopo=buildAT(dd);var dayEntries=dd.entries||[];
+  var nextAction=null;if(!isFullOff){for(var si=0;si<activeSteps.length;si++){var ns=activeSteps[si];var nsd=getStep(ns.id);for(var ai=0;ai<ns.actions.length;ai++){if(!(nsd.checks||{})[ai]){nextAction={step:ns,text:ns.actions[ai]};break;}}if(nextAction)break;}}
+  var currentStep=nextAction?nextAction.step.id:null;
+  var proMsg=getProMsg(pct,h2,currentStep,checkedAct,totalAct,isFullOff);
+  function prevDay(){setDay(prevWorkday(day));}
+  function nextDay(){var nxt=nextWorkday(day);if(nxt>todayStr())return;setDay(nxt);}
+  var now2=new Date();var mY=now2.getFullYear()+Math.floor((now2.getMonth()+mo)/12);var mM=((now2.getMonth()+mo)%12+12)%12;var mDL=mDFn(mY,mM);var mLab=new Date(mY,mM,1).toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
+  function allEntriesDayMonth(){var parts=day.split("-");var prefix=parts[0]+"-"+parts[1];var all=[];Object.keys(state.days).filter(function(k){return k.startsWith(prefix);}).sort().forEach(function(k){var d2=state.days[k];if(d2.entries)d2.entries.forEach(function(e){all.push(e);});});return all;}
+  function allEntriesMonth(){var prefix=mY+"-"+String(mM+1).padStart(2,"0");var all=[];Object.keys(state.days).filter(function(k){return k.startsWith(prefix);}).sort().forEach(function(k){var d2=state.days[k];if(d2.entries)d2.entries.forEach(function(e){all.push(e);});});return all;}
+  var dayMonthLabel=new Date(day+"T12:00:00").toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
+  function doExportDayXLS(){if(!dayEntries.length){flash("Aucune entrée");return;}exportXLS(dayEntries,"Reporting_"+day+".xls");flash("Excel ✓");}
+  function generateEmail(){
+    var b="Bonjour,\n\nTopo du "+fmtD(day)+" (S"+wk(day)+")\nProgression : "+pct+"%\n";if(dayEntries.length)b+="Entrées reporting : "+dayEntries.length+"\n";b+="\n";
+    activeSteps.forEach(function(st){var sd2=getStep(st.id);var ck=st.actions.filter(function(_,j){return(sd2.checks||{})[j];}).length;b+=st.time+"-"+st.to+" "+st.title+" ("+ck+"/"+st.actions.length+")\n";if(sd2.comment)b+="   > "+sd2.comment+"\n";});
+    if(dd.topo&&dd.topo.trim())b+="\nTopo :\n"+dd.topo.trim()+"\n";if(autoTopo)b+="\nDétail :\n"+autoTopo+"\n";if(dd.questions)b+="\nQuestions :\n"+dd.questions+"\n";
+    b+="\nCordialement,\nDavid";window.open("mailto:?subject="+encodeURIComponent("[Pôle Acquisition] Topo "+fmtD(day))+"&body="+encodeURIComponent(b),"_blank");
+  }
+
+  var TABS=[{id:"home",l:"Accueil",e:"💻"},{id:"journee",l:"Journée",e:"📋"},{id:"reporting",l:"Appels, Emails, Chat",e:"📞"},{id:"mois",l:"Mois",e:"📅"}];
+
+  function DayNav(){return(<div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+    <button onClick={prevDay} style={{background:"#fff",border:"1.5px solid #E2E8F0",color:"#475569",fontSize:22,width:42,height:42,borderRadius:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+    <div style={{flex:1,textAlign:"center"}}><div style={{fontSize:18,fontWeight:700,color:"#0F172A",textTransform:"capitalize"}}>{fmtD(day)}</div><div style={{display:"flex",gap:8,justifyContent:"center",marginTop:5}}><span style={{fontFamily:MN,fontSize:11,fontWeight:600,background:"#F1F5F9",color:"#94A3B8",padding:"3px 10px",borderRadius:6}}>{"S"+wk(day)}</span>{day===todayStr()&&<span style={{fontSize:10,fontWeight:800,color:"#051E50",background:"#FFD700",padding:"3px 12px",borderRadius:6}}>Aujourd'hui</span>}</div></div>
+    <button onClick={nextDay} style={{background:"#fff",border:"1.5px solid #E2E8F0",color:"#475569",fontSize:22,width:42,height:42,borderRadius:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
+  </div>);}
+
+  function getSearchResults(){
+    if(!search||search.trim().length<2||!state)return[];
+    var q=search.toLowerCase().trim();var results=[];
+    Object.keys(state.days).sort().reverse().forEach(function(k){
+      var d=state.days[k];if(d.entries)d.entries.forEach(function(e){
+        var match=false;["gesfi","client","typeDemande","agence","mailLeads","actionsDavid","commentaires","canal"].forEach(function(f){if(e[f]&&String(e[f]).toLowerCase().indexOf(q)>=0)match=true;});
+        if(match)results.push({date:k,entry:e});
+      });
+      if(d.topo&&d.topo.toLowerCase().indexOf(q)>=0)results.push({date:k,type:"topo",text:d.topo});
+      if(d.questions&&d.questions.toLowerCase().indexOf(q)>=0)results.push({date:k,type:"questions",text:d.questions});
+      ALL_STEPS.forEach(function(st){var sd=(d.steps||{})[st.id];if(sd&&sd.comment&&sd.comment.toLowerCase().indexOf(q)>=0)results.push({date:k,type:"comment",step:st.title,text:sd.comment});});
+    });
+    return results.slice(0,20);
+  }
+
+  return (
+    <div style={{fontFamily:FT,background:"#F0F2F8",color:"#0F172A",minHeight:"100vh",display:"flex",flexDirection:"column"}}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');*{box-sizing:border-box;margin:0}input,select,button,textarea{font-family:${FT}}input:focus,select:focus,textarea:focus{outline:none;border-color:#FFD700!important;box-shadow:0 0 0 3px #FFD70033!important}button:hover{opacity:.92}button:active{transform:scale(.97)}@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}@keyframes pop{0%{transform:scale(.85);opacity:0}60%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}@keyframes slideT{from{opacity:0;transform:translate(-50%,20px)}to{opacity:1;transform:translate(-50%,0)}}@keyframes confFall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}::selection{background:#FFD700;color:#051E50}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:3px}::-webkit-scrollbar-thumb:hover{background:#94A3B8}`}</style>
+
+      {/* HEADER */}
+      <header style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"0 28px",height:56,background:"linear-gradient(135deg,#051E50 0%,#0A2D6E 100%)",flexShrink:0,boxShadow:"0 2px 20px rgba(5,30,80,.2)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:16}}>
+          <img src={LOGO} alt="Rubix" style={{height:30,borderRadius:3,objectFit:"contain"}}/>
+          <div style={{width:1,height:24,background:"rgba(255,255,255,.12)"}}/>
+          <span style={{fontSize:16,fontWeight:800,color:"#FFD700",letterSpacing:.5}}>Pôle Acquisition</span>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <div style={{position:"relative"}}>
+            <button onClick={function(){setSearchOpen(!searchOpen);if(!searchOpen)setTimeout(function(){try{document.getElementById("rubix-search").focus();}catch(e){}},100);}} style={{width:32,height:32,borderRadius:10,background:"rgba(255,255,255,.08)",border:"none",color:"#FFD700",fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{"🔍"}</button>
+            {searchOpen&&(<div style={{position:"absolute",top:42,right:0,width:380,background:"#fff",borderRadius:14,boxShadow:"0 16px 48px rgba(5,30,80,.2)",border:"1.5px solid #E2E8F0",zIndex:200,overflow:"hidden"}}>
+              <div style={{padding:12}}>
+                <input id="rubix-search" value={search} onChange={function(ev){setSearch(ev.target.value);}} placeholder="Client, agence, canal, commentaire..." style={{width:"100%",padding:"10px 14px",borderRadius:10,border:"1.5px solid #E2E8F0",fontSize:13,fontFamily:FT,boxSizing:"border-box"}}/>
+                <div style={{fontSize:10,color:"#94A3B8",marginTop:6,lineHeight:1.5}}>Recherche dans vos entrées reporting, topos et commentaires saisis dans l'app.</div>
+              </div>
+              {search.trim().length>=2&&(<div style={{maxHeight:320,overflowY:"auto",padding:"0 12px 12px"}}>
+                {(function(){var sr=getSearchResults();return sr.length===0?<div style={{padding:12,textAlign:"center",color:"#94A3B8",fontSize:13}}>Aucun résultat</div>:
+                sr.map(function(r,i){
+                  if(r.entry){return(<div key={i} onClick={function(){setDay(r.date);setTab("reporting");setSearchOpen(false);setSearch("");}} style={{padding:"10px 12px",borderRadius:10,cursor:"pointer",borderBottom:"1px solid #F1F5F9",fontSize:12}}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontWeight:700,color:"#051E50"}}>{String(r.entry.client||r.entry.gesfi||"Entrée")}</span><span style={{fontFamily:MN,fontSize:10,color:"#94A3B8"}}>{r.date}</span></div>
+                    <div style={{color:"#64748B",fontSize:11}}>{[r.entry.canal,r.entry.typeDemande,r.entry.agence].filter(Boolean).join(" · ")}</div>
+                  </div>);}
+                  return(<div key={i} onClick={function(){setDay(r.date);setTab("journee");setSearchOpen(false);setSearch("");}} style={{padding:"10px 12px",borderRadius:10,cursor:"pointer",borderBottom:"1px solid #F1F5F9",fontSize:12}}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontWeight:700,color:"#A855F7",fontSize:10,textTransform:"uppercase"}}>{r.type==="topo"?"Topo":r.type==="questions"?"Questions":String(r.step||"")}</span><span style={{fontFamily:MN,fontSize:10,color:"#94A3B8"}}>{r.date}</span></div>
+                    <div style={{color:"#051E50",fontSize:11}}>{String(r.text||"").substring(0,80)}</div>
+                  </div>);
+                });})()}
+              </div>)}
+            </div>)}
+          </div>
+          <div style={{width:32,height:32,borderRadius:10,background:"linear-gradient(135deg,#FFD700,#F59E0B)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:900,color:"#051E50"}}>D</div>
+        </div>
+      </header>
+
+      <div style={{display:"flex",flex:1,overflow:"hidden"}}>
+        {/* SIDEBAR */}
+        <nav style={{width:200,background:"#fff",borderRight:"1.5px solid #E2E8F0",padding:"20px 0",flexShrink:0,display:"flex",flexDirection:"column",gap:4}}>
+          {TABS.map(function(t){var isA=tab===t.id;return(<button key={t.id} onClick={function(){setTab(t.id);}} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 20px",border:"none",background:isA?"linear-gradient(90deg,#FFD70012,transparent)":"transparent",cursor:"pointer",fontSize:13,fontWeight:isA?800:500,color:isA?"#051E50":"#94A3B8",borderLeft:isA?"4px solid #FFD700":"4px solid transparent",transition:"all .15s",textAlign:"left"}}><span style={{fontSize:16}}>{t.e}</span><span>{t.l}</span></button>);})}
+          <div style={{flex:1}}/>
+          <div style={{padding:"16px 20px",borderTop:"1px solid #E2E8F0",marginTop:12}}><div style={{fontSize:10,color:"#CBD5E1",fontWeight:600,textTransform:"capitalize"}}>{fmtD(todayStr())}</div></div>
+        </nav>
+
+        {/* CONTENT */}
+        <div style={{flex:1,overflow:"auto",padding:"24px 32px 60px"}}>
+
+          {/* HOME */}
+          {tab==="home"&&(<div style={{animation:"fadeUp .35s ease",maxWidth:900}}>
+            <div style={{marginBottom:16}}><div style={{fontSize:28,fontWeight:900,color:"#051E50"}}>{greet}</div><div style={{fontSize:14,color:"#94A3B8",marginTop:4,textTransform:"capitalize"}}>{fmtD(todayStr())+" · S"+wk(todayStr())}</div></div>
+            <div style={{background:"#051E50",borderRadius:14,padding:"14px 24px",marginBottom:18,boxShadow:"0 2px 12px rgba(5,30,80,.1)"}}><span style={{fontSize:14,fontWeight:700,color:"#FFD700"}}>{proMsg}</span></div>
+            {nextAction&&(<div onClick={function(){setTab("journee");}} style={{cursor:"pointer",background:"#fff",borderRadius:16,padding:"20px 24px",border:"1.5px solid "+nextAction.step.color+"33",borderLeft:"5px solid "+nextAction.step.color,marginBottom:16}}><div style={{fontSize:11,fontWeight:700,color:nextAction.step.color,textTransform:"uppercase",letterSpacing:.5,marginBottom:6}}>{"Prochaine action"}</div><div style={{fontSize:16,fontWeight:700,color:"#0F172A"}}>{nextAction.text}</div><div style={{fontSize:13,color:"#94A3B8",marginTop:6}}>{nextAction.step.title+" →"}</div></div>)}
+            {/* Steps overview */}
+            {!isFullOff&&(<div style={{background:"#fff",borderRadius:16,padding:"20px 24px",border:"1.5px solid #E2E8F0",marginBottom:16}}>
+              <div style={{fontSize:14,fontWeight:800,color:"#051E50",marginBottom:14}}>Vue d'ensemble</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
+                {activeSteps.map(function(st){var sd2=getStep(st.id);var ck=st.actions.filter(function(_,j){return(sd2.checks||{})[j];}).length;var tot=st.actions.length;var sp=tot?Math.round(ck/tot*100):0;var done=sp===100;
+                  return(<div key={st.id} onClick={function(){setTab("journee");}} style={{cursor:"pointer",background:done?"#F0FDF4":"#FAFBFF",borderRadius:12,padding:"14px 12px",border:"1.5px solid "+(done?"#BBF7D0":st.color+"22"),textAlign:"center",transition:"all .15s"}}>
+                    <div style={{fontSize:22,marginBottom:6}}>{done?"✅":st.emoji}</div>
+                    <div style={{fontSize:12,fontWeight:700,color:"#0F172A",marginBottom:4,lineHeight:1.3}}>{st.title}</div>
+                    <div style={{fontSize:11,color:st.color,fontFamily:MN,fontWeight:700}}>{st.time}</div>
+                    <div style={{height:4,background:"#F1F5F9",borderRadius:2,marginTop:8,overflow:"hidden"}}><div style={{height:"100%",background:done?"#00D26A":st.color,borderRadius:2,width:sp+"%",transition:"width .5s"}}/></div>
+                    <div style={{fontSize:11,fontFamily:MN,fontWeight:700,color:done?"#00D26A":"#94A3B8",marginTop:4}}>{ck+"/"+tot}</div>
+                  </div>);
+                })}
+              </div>
+            </div>)}
+            {/* Recent entries */}
+            {dayEntries.length>0&&(<div style={{background:"#fff",borderRadius:16,padding:"20px 24px",border:"1.5px solid #E2E8F0",marginBottom:16}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><div style={{fontSize:14,fontWeight:800,color:"#051E50"}}>Dernières entrées</div><button onClick={function(){setTab("reporting");}} style={{fontSize:12,fontWeight:700,color:"#60A5FA",background:"none",border:"none",cursor:"pointer"}}>Voir tout →</button></div>
+              {dayEntries.slice(-3).reverse().map(function(e,i){return(<div key={e.id||i} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:i<Math.min(dayEntries.length,3)-1?"1px solid #EDF2F7":"none"}}>
+                <span style={{padding:"4px 8px",borderRadius:6,fontSize:10,fontWeight:700,background:e.canal==="Email"?"#DBEAFE":e.canal==="Chat"?"#D1FAE5":"#FEF3C7",color:e.canal==="Email"?"#1E40AF":e.canal==="Chat"?"#065F46":"#92400E"}}>{e.canal}</span>
+                <span style={{fontSize:13,fontWeight:600,color:"#0F172A",flex:1}}>{e.client||e.gesfi||"Entrée"}</span>
+                {e.typeDemande&&<span style={{fontSize:12,color:"#94A3B8"}}>{e.typeDemande}</span>}
+              </div>);})}
+            </div>)}
+            {pct===100&&!isFullOff&&(<div style={{background:"linear-gradient(135deg,#ECFDF5,#F0FDF4)",borderRadius:16,padding:"28px",textAlign:"center",border:"1.5px solid #BBF7D0",animation:"pop .5s ease"}}><div style={{fontSize:36}}>🏁</div><div style={{fontSize:20,fontWeight:900,color:"#00D26A",marginTop:8}}>Drapeau à damier !</div></div>)}
+          </div>)}
+
+          {/* JOURNÉE */}
+          {tab==="journee"&&(<div style={{animation:"fadeUp .35s ease",maxWidth:720}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+              <button onClick={prevDay} style={{background:"#fff",border:"1.5px solid #E2E8F0",color:"#475569",fontSize:22,width:42,height:42,borderRadius:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+              <div style={{flex:1,textAlign:"center"}}><div style={{fontSize:18,fontWeight:700,color:"#0F172A",textTransform:"capitalize"}}>{fmtD(day)}</div><div style={{display:"flex",gap:8,justifyContent:"center",marginTop:5}}><span style={{fontFamily:MN,fontSize:11,fontWeight:600,background:"#F1F5F9",color:"#94A3B8",padding:"3px 10px",borderRadius:6}}>{"S"+wk(day)}</span>{day===todayStr()&&<span style={{fontSize:10,fontWeight:800,color:"#051E50",background:"#FFD700",padding:"3px 12px",borderRadius:6}}>Aujourd'hui</span>}</div></div>
+              <button onClick={function(){setTab("reporting");}} style={{display:"flex",alignItems:"center",gap:6,padding:"10px 16px",borderRadius:12,border:"none",background:"#051E50",color:"#FFD700",fontSize:12,fontWeight:800,cursor:"pointer",boxShadow:"0 2px 10px rgba(5,30,80,.15)",whiteSpace:"nowrap"}}><span style={{fontSize:14}}>📞</span>{"+ Entrée"}{dayEntries.length>0&&<span style={{background:"#FFD700",color:"#051E50",fontSize:10,fontWeight:900,padding:"1px 6px",borderRadius:6,marginLeft:2}}>{dayEntries.length}</span>}</button>
+              <button onClick={nextDay} style={{background:"#fff",border:"1.5px solid #E2E8F0",color:"#475569",fontSize:22,width:42,height:42,borderRadius:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
+            </div>
+            {/* Relances du jour */}
+            {(function(){var relances=[];Object.keys(state.days).forEach(function(k){(state.days[k].entries||[]).forEach(function(en){if(en.relanceDate===day)relances.push({from:k,entry:en});});});
+              if(!relances.length)return null;
+              return(<div style={{background:"#FFF9E6",borderRadius:14,padding:16,border:"1.5px solid #FFD700",marginBottom:14}}>
+                <div style={{fontSize:12,fontWeight:800,color:"#051E50",marginBottom:10}}>{"🔔 "+relances.length+" relance"+(relances.length>1?"s":"")+" prévue"+(relances.length>1?"s":"")+" aujourd'hui"}</div>
+                {relances.map(function(r,i){return(<div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<relances.length-1?"1px solid #FFD70033":"none"}}>
+                  <span style={{background:r.entry.canal==="Email"?"#DBEAFE":r.entry.canal==="Chat"?"#D1FAE5":"#FEF3C7",padding:"3px 8px",borderRadius:6,fontSize:10,fontWeight:700,color:"#051E50"}}>{r.entry.canal==="Téléphone"?"📞":r.entry.canal==="Email"?"✉️":"💬"}</span>
+                  <span style={{fontWeight:700,fontSize:13,color:"#051E50"}}>{r.entry.client||r.entry.gesfi||"Client"}</span>
+                  <span style={{fontSize:11,color:"#94A3B8"}}>{r.entry.typeDemande||""}</span>
+                  <span style={{fontSize:10,fontFamily:MN,color:"#94A3B8",marginLeft:"auto"}}>{"du "+fmtD(r.from)}</span>
+                </div>);})}
+              </div>);
+            })()}
+            <div style={{background:"#fff",borderRadius:14,padding:16,border:"1.5px solid #E2E8F0",marginBottom:14}}><div style={{fontSize:12,fontWeight:700,color:"#051E50",marginBottom:10}}>📅 Disponibilité</div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}><AbsPill label="Matin" value={dd.am||"none"} onChange={function(v){setDD(function(d2){return{...d2,am:v};});}}/><AbsPill label="Après-midi" value={dd.pm||"none"} onChange={function(v){setDD(function(d2){return{...d2,pm:v};});}}/></div></div>
+            {isFullOff?(<div style={{background:"#fff",borderRadius:14,padding:"32px",textAlign:"center",border:"1.5px solid #E2E8F0"}}><div style={{fontSize:44}}>🏖️</div><div style={{fontSize:16,fontWeight:700,color:"#94A3B8",marginTop:10}}>Pas de créneau</div></div>):(
+            <><div style={{display:"flex",flexDirection:"column",gap:10}}>{activeSteps.map(function(step){var sd2=getStep(step.id);return <StepCard key={step.id} step={step} sd={sd2} onToggle={function(i){toggleCheck(step.id,i);}} onComment={function(v){setStep(step.id,{comment:v});}}/>;})}
+              {pct===100&&(<div style={{animation:"pop .5s ease",background:"linear-gradient(135deg,#ECFDF5,#FEF9C3)",borderRadius:14,padding:"28px",textAlign:"center",border:"1.5px solid #BBF7D0"}}><div style={{fontSize:40}}>🏁</div><div style={{fontSize:20,fontWeight:900,color:"#00D26A",marginTop:8}}>Drapeau à damier !</div></div>)}</div></>)}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginTop:18}}>
+              <div style={{background:"#fff",borderRadius:14,padding:18,border:"1.5px solid #E2E8F0",borderLeft:"5px solid #FFD700"}}><div style={{fontSize:14,fontWeight:700,color:"#051E50",marginBottom:10}}>📝 Topo</div>{autoTopo&&<div style={{background:"#FFFBEB",borderRadius:10,padding:"10px 14px",marginBottom:10,border:"1px solid #FDE68A",fontSize:12,color:"#0F172A",whiteSpace:"pre-line",lineHeight:1.7}}>{autoTopo}</div>}<TA2 value={dd.topo||""} onChange={function(v){setDD(function(d2){return{...d2,topo:v};});}} placeholder="Compléments..."/></div>
+              <div style={{background:"#fff",borderRadius:14,padding:18,border:"1.5px solid #E2E8F0",borderLeft:"5px solid #A855F7"}}><div style={{fontSize:14,fontWeight:700,color:"#A855F7",marginBottom:10}}>❓ Questions</div><TA2 value={dd.questions||""} onChange={function(v){setDD(function(d2){return{...d2,questions:v};});}} placeholder="Questions manager..."/></div>
+            </div>
+            <div style={{background:"#fff",borderRadius:14,padding:18,marginTop:14,border:"1.5px solid #E2E8F0"}}><div style={{fontSize:14,fontWeight:700,color:"#051E50",marginBottom:10}}>Satisfaction</div><div style={{display:"flex",gap:8}}>{[{n:1,e:"😓",l:"Difficile"},{n:2,e:"😐",l:"Moyen"},{n:3,e:"🙂",l:"Correct"},{n:4,e:"😊",l:"Bien"},{n:5,e:"🔥",l:"Top !"}].map(function(item){return(<button key={item.n} onClick={function(){setDD(function(d2){return{...d2,satisfaction:d2.satisfaction===item.n?0:item.n};});}} style={{flex:1,padding:"10px 4px",borderRadius:12,border:"2px solid "+(dd.satisfaction===item.n?"#FFD700":"#E2E8F0"),background:dd.satisfaction===item.n?"linear-gradient(135deg,#FFFBEB,#FEF3C7)":"#fff",cursor:"pointer",textAlign:"center"}}><div style={{fontSize:24}}>{item.e}</div><div style={{fontSize:9,fontWeight:700,color:dd.satisfaction===item.n?"#051E50":"#94A3B8",marginTop:3}}>{item.l}</div></button>);})}</div></div>
+            <div style={{display:"flex",gap:10,marginTop:18}}><button onClick={generateEmail} style={{flex:1,padding:"14px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#051E50,#0A2D6E)",color:"#FFD700",fontSize:14,fontWeight:800,cursor:"pointer"}}>✉️ Envoyer le topo à Denis</button></div>
+          </div>)}
+
+          {/* REPORTING */}
+          {tab==="reporting"&&(<div style={{animation:"fadeUp .35s ease",maxWidth:1100}}>
+            <DayNav/>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:16}}>
+              {[{c:"Email",e:"✉️",bg:"linear-gradient(135deg,#DBEAFE,#EFF6FF)",cl:"#1E40AF"},{c:"Chat",e:"💬",bg:"linear-gradient(135deg,#D1FAE5,#ECFDF5)",cl:"#065F46"},{c:"Téléphone",e:"📞",bg:"linear-gradient(135deg,#FEF3C7,#FFFBEB)",cl:"#92400E"}].map(function(item){return(<div key={item.c} style={{background:item.bg,borderRadius:14,padding:"16px 20px",display:"flex",alignItems:"center",gap:14}}><span style={{fontSize:28}}>{item.e}</span><div><div style={{fontFamily:MN,fontSize:28,fontWeight:900,color:item.cl}}>{dayEntries.filter(function(e){return e.canal===item.c;}).length}</div><div style={{fontSize:11,fontWeight:700,color:item.cl,opacity:.7}}>{item.c+"s"}</div></div></div>);})}
+            </div>
+            <ReportingForm day={day} onAdd={addEntry}/>
+            <div style={{background:"#fff",borderRadius:16,padding:18,marginTop:16,border:"1.5px solid #E2E8F0"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><div style={{fontSize:16,fontWeight:800,color:"#051E50"}}>Entrées du jour</div>{dayEntries.length>0&&<button onClick={doExportDayXLS} style={{padding:"8px 16px",borderRadius:8,border:"1.5px solid #E2E8F0",background:"#fff",color:"#051E50",fontSize:11,fontWeight:700,cursor:"pointer"}}>📥 Jour .xls</button>}</div>
+              <ReportingTable entries={dayEntries} onDelete={deleteEntry} onReorder={reorderEntries}/>
+            </div>
+            <button onClick={function(){var e2=allEntriesDayMonth();if(!e2.length){flash("Aucune entrée");return;}exportXLS(e2,"Reporting_Acquisition_"+dayMonthLabel.replace(/ /g,"_")+".xls");flash("Excel ✓");}} style={{width:"100%",padding:"14px",marginTop:16,borderRadius:12,border:"none",background:"linear-gradient(135deg,#051E50,#0A2D6E)",color:"#FFD700",fontSize:14,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 20px rgba(5,30,80,.15)"}}>{"📥 Export Reporting mensuel · "+dayMonthLabel}</button>
+          </div>)}
+
+          {/* MOIS */}
+          {tab==="mois"&&(<div style={{animation:"fadeUp .35s ease",maxWidth:900}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+              <button onClick={function(){setMo(function(p){return p-1;});}} style={{background:"#fff",border:"1.5px solid #E2E8F0",color:"#475569",fontSize:22,width:42,height:42,borderRadius:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+              <span style={{fontSize:20,fontWeight:900,color:"#0F172A",textTransform:"capitalize"}}>{mLab}</span>
+              <button onClick={function(){setMo(function(p){return p+1;});}} style={{background:"#fff",border:"1.5px solid #E2E8F0",color:"#475569",fontSize:22,width:42,height:42,borderRadius:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:18}}>
+              <div style={{background:"#fff",borderRadius:16,padding:18,border:"1.5px solid #E2E8F0"}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:4,marginBottom:8}}>{["L","M","M","J","V"].map(function(d2,i){return <div key={i} style={{textAlign:"center",fontSize:11,fontWeight:700,color:"#94A3B8",padding:6}}>{d2}</div>;})}</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:4}}>
+                  {mDL.map(function(d2,i){
+                    if(!d2)return <div key={i}/>;var future=d2>todayStr();
+                    if(future)return(<div key={i} style={{padding:"6px 4px",borderRadius:10,background:"#FAFBFF",textAlign:"center",opacity:.4}}><div style={{fontSize:13,fontFamily:MN,color:"#CBD5E1"}}>{parseInt(d2.split("-")[2])}</div></div>);
+                    var dd2=state.days[d2]||emptyDay();var as2=getAS(dd2);var fo2=as2.length===0;var amR=ABS.find(function(r){return r.id===(dd2.am||"none");})||ABS[0];var isT=d2===todayStr();var isSel=d2===day;
+                    var dayPct=0;if(as2.length>0){var tA=as2.reduce(function(s,st){return s+st.actions.length;},0);var cA=as2.reduce(function(s,st){return s+st.actions.filter(function(_,j){return((dd2.steps[st.id]||{}).checks||{})[j];}).length;},0);dayPct=tA?Math.round(cA/tA*100):0;}
+                    var nE=(dd2.entries||[]).length;
+                    var hasRelance=false;Object.keys(state.days).forEach(function(k){var ed=(state.days[k].entries||[]);ed.forEach(function(en){if(en.relanceDate===d2)hasRelance=true;});});
+                    return(<button key={i} onClick={function(){setDay(d2);setTab("journee");}} style={{padding:"6px 4px",borderRadius:10,border:isSel?"2px solid #FFD700":isT?"2px solid #60A5FA":"1.5px solid #E2E8F0",background:isSel?"#FFD70012":"#fff",cursor:"pointer",textAlign:"center",position:"relative",overflow:"hidden"}}>
+                      <div style={{fontSize:13,fontWeight:isT?900:600,color:isT?"#051E50":"#0F172A",fontFamily:MN}}>{parseInt(d2.split("-")[2])}</div>
+                      {fo2?<div style={{fontSize:9,marginTop:2}}>{amR.e||"🏖️"}</div>:dayPct>0?<div style={{height:3,borderRadius:2,background:"#F1F5F9",margin:"4px 4px 0",overflow:"hidden"}}><div style={{height:"100%",background:dayPct===100?"#00D26A":"#FFD700",width:dayPct+"%",borderRadius:2}}/></div>:null}
+                      {nE>0&&<div style={{position:"absolute",top:2,left:3,fontSize:8,fontFamily:MN,fontWeight:700,color:"#60A5FA"}}>{nE}</div>}
+                      {hasRelance&&<div style={{position:"absolute",top:2,right:3,fontSize:8}}>{"🔔"}</div>}
+                    </button>);
+                  })}
+                </div>
+              </div>
+              <div style={{background:"#fff",borderRadius:16,padding:18,border:"1.5px solid #E2E8F0"}}>
+                <div style={{fontSize:15,fontWeight:800,color:"#051E50",marginBottom:16}}>Synthèse</div>
+                {(function(){var prefix=mY+"-"+String(mM+1).padStart(2,"0");var ks=Object.keys(state.days).filter(function(k){return k.startsWith(prefix);});var worked=ks.filter(function(k){return getAS(state.days[k]).length>0;});
+                  var totalActions=worked.reduce(function(sum,k){var d2=state.days[k];return sum+getAS(d2).reduce(function(s2,st){return s2+st.actions.filter(function(_,j){return((d2.steps[st.id]||{}).checks||{})[j];}).length;},0);},0);
+                  var totalPossible=worked.reduce(function(sum,k){return sum+getAS(state.days[k]).reduce(function(s2,st){return s2+st.actions.length;},0);},0);var actRate=totalPossible?Math.round(totalActions/totalPossible*100):0;
+                  // Weekly mood data
+                  var weekMap={};worked.forEach(function(k){var w="S"+wk(k);var sat=state.days[k].satisfaction||0;if(!weekMap[w])weekMap[w]={total:0,count:0};if(sat>0){weekMap[w].total+=sat;weekMap[w].count++;}});
+                  var weeks=Object.keys(weekMap).sort();
+                  var moods=[{n:1,e:"😓",c:"#FD8374"},{n:2,e:"😐",c:"#BBBBBC"},{n:3,e:"🙂",c:"#80A2FC"},{n:4,e:"😊",c:"#00C66A"},{n:5,e:"🔥",c:"#FFD700"}];
+                  function moodFor(avg){if(avg<=0)return{e:"-",c:"#BBBBBC"};var m=moods[Math.min(Math.round(avg)-1,4)];return m||{e:"-",c:"#BBBBBC"};}
+                  return(<div>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",borderBottom:"1px solid #EDF2F7"}}><span style={{fontSize:13,color:"#475569",fontWeight:600}}>Complétion</span><span style={{fontFamily:MN,fontSize:20,fontWeight:900,color:"#00C66A"}}>{actRate+"%"}</span></div>
+                    <div style={{marginTop:14}}>
+                      <div style={{fontSize:12,fontWeight:700,color:"#051E50",marginBottom:10}}>Humeur par semaine</div>
+                      {weeks.length===0?<div style={{fontSize:11,color:"#94A3B8"}}>Pas encore de données</div>:
+                      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                        {weeks.map(function(w){
+                          var avg=weekMap[w].count>0?(weekMap[w].total/weekMap[w].count):0;
+                          var m=moodFor(avg);
+                          return(<div key={w} style={{display:"flex",alignItems:"center",gap:8}}>
+                            <span style={{fontFamily:MN,fontSize:10,fontWeight:700,color:"#575656",width:28}}>{w}</span>
+                            <div style={{flex:1,height:8,background:"#F1F5F9",borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",background:m.c,width:Math.round(avg/5*100)+"%",borderRadius:4,transition:"width .4s"}}/></div>
+                            <span style={{fontSize:16}}>{m.e}</span>
+                            <span style={{fontFamily:MN,fontSize:11,fontWeight:700,color:m.c,width:24,textAlign:"right"}}>{avg>0?avg.toFixed(1):"-"}</span>
+                          </div>);
+                        })}
+                      </div>}
+                    </div>
+                  </div>);
+                })()}
+              </div>
+            </div>
+
+            {/* DASHBOARD HEBDO */}
+            {(function(){
+              var prefix=mY+"-"+String(mM+1).padStart(2,"0");
+              var ks=Object.keys(state.days).filter(function(k){return k.startsWith(prefix);}).sort();
+              var worked=ks.filter(function(k){return getAS(state.days[k]).length>0;});
+              var canalCounts={};allEntriesMonth().forEach(function(e){canalCounts[e.canal]=(canalCounts[e.canal]||0)+1;});
+              var totalE=allEntriesMonth().length||1;
+              var canaux=[{c:"Téléphone",bg:"#FFD700",cl:"#051E50"},{c:"Email",bg:"#60A5FA",cl:"#051E50"},{c:"Chat",bg:"#00D26A",cl:"#051E50"}];
+              var perfectDays=worked.filter(function(k){
+                var d2=state.days[k];var as2=getAS(d2);
+                var tA=as2.reduce(function(s,st){return s+st.actions.length;},0);
+                var cA=as2.reduce(function(s,st){return s+st.actions.filter(function(_,j){return((d2.steps[st.id]||{}).checks||{})[j];}).length;},0);
+                return tA>0&&cA===tA;
+              }).length;
+              var allDaysSorted=Object.keys(state.days).sort().reverse();var streak=0;
+              for(var si=0;si<allDaysSorted.length;si++){
+                var dk=allDaysSorted[si];var dd3=state.days[dk];var as3=getAS(dd3);
+                if(as3.length===0)continue;
+                var tA3=as3.reduce(function(s,st){return s+st.actions.length;},0);
+                var cA3=as3.reduce(function(s,st){return s+st.actions.filter(function(_,j){return((dd3.steps[st.id]||{}).checks||{})[j];}).length;},0);
+                if(tA3>0&&cA3===tA3)streak++;else break;
+              }
+              var badges=[
+                {id:"first",label:"Premier 100%",icon:"⭐",need:1,desc:"1 journée complétée"},
+                {id:"five",label:"Top 5",icon:"🏅",need:5,desc:"5 journées complétées"},
+                {id:"ten",label:"Serial closer",icon:"🏆",need:10,desc:"10 journées complétées"},
+                {id:"twenty",label:"Machine",icon:"💎",need:20,desc:"20 journées complétées"},
+                {id:"fifty",label:"Légende",icon:"👑",need:50,desc:"50 journées complétées"},
+                {id:"streak3",label:"Streak 3j",icon:"🔥",need:3,desc:"3 jours de suite",streak:true},
+                {id:"streak5",label:"Streak 5j",icon:"⚡",need:5,desc:"5 jours de suite",streak:true},
+                {id:"streak10",label:"Inarrêtable",icon:"🚀",need:10,desc:"10 jours de suite",streak:true}
+              ];
+              return(<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginTop:18}}>
+                <div style={{background:"#fff",borderRadius:16,padding:18,border:"1.5px solid #E2E8F0"}}>
+                  <div style={{fontSize:14,fontWeight:800,color:"#051E50",marginBottom:14}}>Répartition canaux</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                    {canaux.map(function(item){var cnt=canalCounts[item.c]||0;var pct2=Math.round(cnt/totalE*100);return(
+                      <div key={item.c}>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:12,fontWeight:600,color:"#051E50"}}>{item.c}</span><span style={{fontFamily:MN,fontSize:12,fontWeight:700,color:item.cl}}>{cnt}</span></div>
+                        <div style={{height:8,background:"#F1F5F9",borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",background:item.bg,width:pct2+"%",borderRadius:4,transition:"width .4s"}}/></div>
+                      </div>);})}
+                  </div>
+                </div>
+                <div style={{background:"#fff",borderRadius:16,padding:18,border:"1.5px solid #E2E8F0"}}>
+                  <div style={{fontSize:14,fontWeight:800,color:"#051E50",marginBottom:14}}>Série en cours</div>
+                  <div style={{textAlign:"center",padding:"10px 0"}}>
+                    <div style={{fontFamily:MN,fontSize:48,fontWeight:900,color:streak>=3?"#FFD700":"#051E50"}}>{String(streak)}</div>
+                    <div style={{fontSize:12,fontWeight:700,color:"#94A3B8",marginTop:4}}>{"jour"+(streak>1?"s":"")+" consécutif"+(streak>1?"s":"")+" à 100%"}</div>
+                    {streak>=5&&<div style={{fontSize:11,fontWeight:800,color:"#00D26A",marginTop:8}}>Impressionnant, continuez !</div>}
+                  </div>
+                </div>
+                <div style={{background:"#fff",borderRadius:16,padding:18,border:"1.5px solid #E2E8F0",gridColumn:"1 / -1"}}>
+                  <div style={{fontSize:14,fontWeight:800,color:"#051E50",marginBottom:14}}>Récompenses</div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
+                    {badges.map(function(b){var unlocked=b.streak?(streak>=b.need):(perfectDays>=b.need);var progress=b.streak?Math.min(streak,b.need):Math.min(perfectDays,b.need);return(
+                      <div key={b.id} style={{textAlign:"center",padding:"14px 8px",borderRadius:14,border:"1.5px solid "+(unlocked?"#FFD700":"#F1F5F9"),background:unlocked?"linear-gradient(135deg,#FFD70010,#FFD70020)":"#FAFBFF",opacity:unlocked?1:.5}}>
+                        <div style={{fontSize:28}}>{b.icon}</div>
+                        <div style={{fontSize:11,fontWeight:800,color:unlocked?"#051E50":"#94A3B8",marginTop:6}}>{b.label}</div>
+                        <div style={{fontSize:9,color:"#94A3B8",marginTop:2}}>{b.desc}</div>
+                        {!unlocked&&<div style={{height:4,background:"#F1F5F9",borderRadius:2,marginTop:6,overflow:"hidden"}}><div style={{height:"100%",background:"#FFD700",width:Math.round(progress/b.need*100)+"%",borderRadius:2}}/></div>}
+                        {unlocked&&<div style={{fontSize:9,fontWeight:800,color:"#00D26A",marginTop:4}}>Débloqué</div>}
+                      </div>);})}
+                  </div>
+                </div>
+              </div>);
+            })()}
+          </div>)}
+
+        </div>
+      </div>
+      {showConfetti&&<ConfettiOverlay active={true}/>}
+      {toast&&<div style={{position:"fixed",bottom:28,left:"50%",transform:"translateX(-50%)",background:"linear-gradient(135deg,#051E50,#0A2D6E)",color:"#FFD700",borderRadius:14,padding:"12px 32px",fontSize:14,fontWeight:700,zIndex:200,animation:"slideT .3s ease",boxShadow:"0 8px 32px rgba(5,30,80,.25)"}}>{toast}</div>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
