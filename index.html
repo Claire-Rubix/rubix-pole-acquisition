@@ -311,7 +311,7 @@ function App(){
   var currentStep=nextAction?nextAction.step.id:null;
   var proMsg=getProMsg(pct,h2,currentStep,checkedAct,totalAct,isFullOff);
   function prevDay(){setDay(prevWorkday(day));}
-  function nextDay(){var nxt=nextWorkday(day);if(nxt>todayStr())return;setDay(nxt);}
+  function nextDay(){setDay(nextWorkday(day));}
   var now2=new Date();var mY=now2.getFullYear()+Math.floor((now2.getMonth()+mo)/12);var mM=((now2.getMonth()+mo)%12+12)%12;var mDL=mDFn(mY,mM);var mLab=new Date(mY,mM,1).toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
   function allEntriesDayMonth(){var parts=day.split("-");var prefix=parts[0]+"-"+parts[1];var all=[];Object.keys(state.days).filter(function(k){return k.startsWith(prefix);}).sort().forEach(function(k){var d2=state.days[k];if(d2.entries)d2.entries.forEach(function(e){all.push(e);});});return all;}
   function allEntriesMonth(){var prefix=mY+"-"+String(mM+1).padStart(2,"0");var all=[];Object.keys(state.days).filter(function(k){return k.startsWith(prefix);}).sort().forEach(function(k){var d2=state.days[k];if(d2.entries)d2.entries.forEach(function(e){all.push(e);});});return all;}
@@ -430,17 +430,18 @@ function App(){
 
           {/* JOURNÉE */}
           {tab==="journee"&&(<div style={{animation:"fadeUp .35s ease",maxWidth:720}}>
+            {(function(){var isFuture=day>todayStr();return(<>
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
               <button onClick={prevDay} style={{background:"#fff",border:"1.5px solid #E2E8F0",color:"#475569",fontSize:22,width:42,height:42,borderRadius:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
-              <div style={{flex:1,textAlign:"center"}}><div style={{fontSize:18,fontWeight:700,color:"#0F172A",textTransform:"capitalize"}}>{fmtD(day)}</div><div style={{display:"flex",gap:8,justifyContent:"center",marginTop:5}}><span style={{fontFamily:MN,fontSize:11,fontWeight:600,background:"#F1F5F9",color:"#94A3B8",padding:"3px 10px",borderRadius:6}}>{"S"+wk(day)}</span>{day===todayStr()&&<span style={{fontSize:10,fontWeight:800,color:"#051E50",background:"#FFD700",padding:"3px 12px",borderRadius:6}}>Aujourd'hui</span>}</div></div>
-              <button onClick={function(){setTab("reporting");}} style={{display:"flex",alignItems:"center",gap:6,padding:"10px 16px",borderRadius:12,border:"none",background:"#051E50",color:"#FFD700",fontSize:12,fontWeight:800,cursor:"pointer",boxShadow:"0 2px 10px rgba(5,30,80,.15)",whiteSpace:"nowrap"}}><span style={{fontSize:14}}>📞</span>{"+ Entrée"}{dayEntries.length>0&&<span style={{background:"#FFD700",color:"#051E50",fontSize:10,fontWeight:900,padding:"1px 6px",borderRadius:6,marginLeft:2}}>{dayEntries.length}</span>}</button>
+              <div style={{flex:1,textAlign:"center"}}><div style={{fontSize:18,fontWeight:700,color:"#0F172A",textTransform:"capitalize"}}>{fmtD(day)}</div><div style={{display:"flex",gap:8,justifyContent:"center",marginTop:5}}><span style={{fontFamily:MN,fontSize:11,fontWeight:600,background:"#F1F5F9",color:"#94A3B8",padding:"3px 10px",borderRadius:6}}>{"S"+wk(day)}</span>{day===todayStr()&&<span style={{fontSize:10,fontWeight:800,color:"#051E50",background:"#FFD700",padding:"3px 12px",borderRadius:6}}>Aujourd'hui</span>}{isFuture&&<span style={{fontSize:10,fontWeight:800,color:"#fff",background:"#94A3B8",padding:"3px 12px",borderRadius:6}}>A venir</span>}</div></div>
+              {!isFuture&&<button onClick={function(){setTab("reporting");}} style={{display:"flex",alignItems:"center",gap:6,padding:"10px 16px",borderRadius:12,border:"none",background:"#051E50",color:"#FFD700",fontSize:12,fontWeight:800,cursor:"pointer",boxShadow:"0 2px 10px rgba(5,30,80,.15)",whiteSpace:"nowrap"}}><span style={{fontSize:14}}>📞</span>{"+ Entrée"}{dayEntries.length>0&&<span style={{background:"#FFD700",color:"#051E50",fontSize:10,fontWeight:900,padding:"1px 6px",borderRadius:6,marginLeft:2}}>{dayEntries.length}</span>}</button>}
               <button onClick={nextDay} style={{background:"#fff",border:"1.5px solid #E2E8F0",color:"#475569",fontSize:22,width:42,height:42,borderRadius:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
             </div>
             {/* Relances du jour */}
             {(function(){var relances=[];Object.keys(state.days).forEach(function(k){(state.days[k].entries||[]).forEach(function(en){if(en.relanceDate===day)relances.push({from:k,entry:en});});});
-              if(!relances.length)return null;
+              if(!relances.length){return isFuture?(<div style={{background:"#fff",borderRadius:14,padding:"32px",textAlign:"center",border:"1.5px solid #E2E8F0"}}><div style={{fontSize:44}}>📅</div><div style={{fontSize:16,fontWeight:700,color:"#94A3B8",marginTop:10}}>Aucune relance prévue</div></div>):null;}
               return(<div style={{background:"#FFF9E6",borderRadius:14,padding:16,border:"1.5px solid #FFD700",marginBottom:14}}>
-                <div style={{fontSize:12,fontWeight:800,color:"#051E50",marginBottom:10}}>{"🔔 "+relances.length+" relance"+(relances.length>1?"s":"")+" prévue"+(relances.length>1?"s":"")+" aujourd'hui"}</div>
+                <div style={{fontSize:12,fontWeight:800,color:"#051E50",marginBottom:10}}>{"🔔 "+relances.length+" relance"+(relances.length>1?"s":"")+" prévue"+(relances.length>1?"s":"")+(isFuture?" ce jour":" aujourd'hui")}</div>
                 {relances.map(function(r,i){return(<div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<relances.length-1?"1px solid #FFD70033":"none"}}>
                   <span style={{background:r.entry.canal==="Email"?"#DBEAFE":r.entry.canal==="Chat"?"#D1FAE5":"#FEF3C7",padding:"3px 8px",borderRadius:6,fontSize:10,fontWeight:700,color:"#051E50"}}>{r.entry.canal==="Téléphone"?"📞":r.entry.canal==="Email"?"✉️":"💬"}</span>
                   <span style={{fontWeight:700,fontSize:13,color:"#051E50"}}>{r.entry.client||r.entry.gesfi||"Client"}</span>
@@ -449,6 +450,7 @@ function App(){
                 </div>);})}
               </div>);
             })()}
+            {!isFuture&&<>
             <div style={{background:"#fff",borderRadius:14,padding:16,border:"1.5px solid #E2E8F0",marginBottom:14}}><div style={{fontSize:12,fontWeight:700,color:"#051E50",marginBottom:10}}>📅 Disponibilité</div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}><AbsPill label="Matin" value={dd.am||"none"} onChange={function(v){setDD(function(d2){return{...d2,am:v};});}}/><AbsPill label="Après-midi" value={dd.pm||"none"} onChange={function(v){setDD(function(d2){return{...d2,pm:v};});}}/></div></div>
             {isFullOff?(<div style={{background:"#fff",borderRadius:14,padding:"32px",textAlign:"center",border:"1.5px solid #E2E8F0"}}><div style={{fontSize:44}}>🏖️</div><div style={{fontSize:16,fontWeight:700,color:"#94A3B8",marginTop:10}}>Pas de créneau</div></div>):(
             <><div style={{display:"flex",flexDirection:"column",gap:10}}>{activeSteps.map(function(step){var sd2=getStep(step.id);return <StepCard key={step.id} step={step} sd={sd2} onToggle={function(i){toggleCheck(step.id,i);}} onComment={function(v){setStep(step.id,{comment:v});}}/>;})}
@@ -459,6 +461,7 @@ function App(){
             </div>
             <div style={{background:"#fff",borderRadius:14,padding:18,marginTop:14,border:"1.5px solid #E2E8F0"}}><div style={{fontSize:14,fontWeight:700,color:"#051E50",marginBottom:10}}>Satisfaction</div><div style={{display:"flex",gap:8}}>{[{n:1,e:"😓",l:"Difficile"},{n:2,e:"😐",l:"Moyen"},{n:3,e:"🙂",l:"Correct"},{n:4,e:"😊",l:"Bien"},{n:5,e:"🔥",l:"Top !"}].map(function(item){return(<button key={item.n} onClick={function(){setDD(function(d2){return{...d2,satisfaction:d2.satisfaction===item.n?0:item.n};});}} style={{flex:1,padding:"10px 4px",borderRadius:12,border:"2px solid "+(dd.satisfaction===item.n?"#FFD700":"#E2E8F0"),background:dd.satisfaction===item.n?"linear-gradient(135deg,#FFFBEB,#FEF3C7)":"#fff",cursor:"pointer",textAlign:"center"}}><div style={{fontSize:24}}>{item.e}</div><div style={{fontSize:9,fontWeight:700,color:dd.satisfaction===item.n?"#051E50":"#94A3B8",marginTop:3}}>{item.l}</div></button>);})}</div></div>
             <div style={{display:"flex",gap:10,marginTop:18}}><button onClick={generateEmail} style={{flex:1,padding:"14px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#051E50,#0A2D6E)",color:"#FFD700",fontSize:14,fontWeight:800,cursor:"pointer"}}>✉️ Envoyer le topo à Denis</button></div>
+            </>}</>;})()}
           </div>)}
 
           {/* REPORTING */}
@@ -488,11 +491,12 @@ function App(){
                 <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:4}}>
                   {mDL.map(function(d2,i){
                     if(!d2)return <div key={i}/>;var future=d2>todayStr();
-                    if(future)return(<div key={i} style={{padding:"6px 4px",borderRadius:10,background:"#FAFBFF",textAlign:"center",opacity:.4}}><div style={{fontSize:13,fontFamily:MN,color:"#CBD5E1"}}>{parseInt(d2.split("-")[2])}</div></div>);
-                    var dd2=state.days[d2]||emptyDay();var as2=getAS(dd2);var fo2=as2.length===0;var amR=ABS.find(function(r){return r.id===(dd2.am||"none");})||ABS[0];var isT=d2===todayStr();var isSel=d2===day;
+                    var hasRelance=false;Object.keys(state.days).forEach(function(k){var ed=(state.days[k].entries||[]);ed.forEach(function(en){if(en.relanceDate===d2)hasRelance=true;});});
+                    var isSel=d2===day;var isT=d2===todayStr();
+                    if(future)return(<button key={i} onClick={function(){setDay(d2);setTab("journee");}} style={{padding:"6px 4px",borderRadius:10,border:isSel?"2px solid #FFD700":"1.5px solid #E2E8F0",background:isSel?"#FFD70012":hasRelance?"#FFFBEB":"#FAFBFF",cursor:"pointer",textAlign:"center",opacity:hasRelance?1:.5,position:"relative",overflow:"hidden"}}><div style={{fontSize:13,fontFamily:MN,color:hasRelance?"#051E50":"#CBD5E1",fontWeight:hasRelance?700:400}}>{parseInt(d2.split("-")[2])}</div>{hasRelance&&<div style={{position:"absolute",top:2,right:3,fontSize:8}}>{"🔔"}</div>}</button>);
+                    var dd2=state.days[d2]||emptyDay();var as2=getAS(dd2);var fo2=as2.length===0;var amR=ABS.find(function(r){return r.id===(dd2.am||"none");})||ABS[0];
                     var dayPct=0;if(as2.length>0){var tA=as2.reduce(function(s,st){return s+st.actions.length;},0);var cA=as2.reduce(function(s,st){return s+st.actions.filter(function(_,j){return((dd2.steps[st.id]||{}).checks||{})[j];}).length;},0);dayPct=tA?Math.round(cA/tA*100):0;}
                     var nE=(dd2.entries||[]).length;
-                    var hasRelance=false;Object.keys(state.days).forEach(function(k){var ed=(state.days[k].entries||[]);ed.forEach(function(en){if(en.relanceDate===d2)hasRelance=true;});});
                     return(<button key={i} onClick={function(){setDay(d2);setTab("journee");}} style={{padding:"6px 4px",borderRadius:10,border:isSel?"2px solid #FFD700":isT?"2px solid #60A5FA":"1.5px solid #E2E8F0",background:isSel?"#FFD70012":"#fff",cursor:"pointer",textAlign:"center",position:"relative",overflow:"hidden"}}>
                       <div style={{fontSize:13,fontWeight:isT?900:600,color:isT?"#051E50":"#0F172A",fontFamily:MN}}>{parseInt(d2.split("-")[2])}</div>
                       {fo2?<div style={{fontSize:9,marginTop:2}}>{amR.e||"🏖️"}</div>:dayPct>0?<div style={{height:3,borderRadius:2,background:"#F1F5F9",margin:"4px 4px 0",overflow:"hidden"}}><div style={{height:"100%",background:dayPct===100?"#00D26A":"#FFD700",width:dayPct+"%",borderRadius:2}}/></div>:null}
